@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trade Comparison Tracker</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --ink: #111827;
+      --muted: #6b7280;
+      --line: #d7dce3;
+      --soft-line: #e9edf2;
+      --orange: #ff9900;
+      --orange-soft: #fff1d7;
+      --grey: #cccccc;
+      --red: #c00000;
+      --red-bg: #fce4d6;
+      --green: #047857;
+      --green-bg: #dff6ec;
+      --blue: #1f5eff;
+      --purple: #7c3aed;
+      --shadow: 0 16px 45px rgba(17, 24, 39, 0.09);
+      --radius: 18px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(255,153,0,0.16), transparent 34rem),
+        linear-gradient(180deg, #fbfbfc 0%, var(--bg) 42%, #edf1f6 100%);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    .page {
+      width: min(1480px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .title-card {
+      background: var(--panel);
+      border: 1px solid var(--soft-line);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .title-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 8px;
+      background: var(--orange);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.45rem, 2.5vw, 2.5rem);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      max-width: 980px;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.55;
+    }
+
+    .warning {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--orange);
+      color: #111;
+      border-radius: 14px;
+      font-weight: 800;
+      box-shadow: 0 8px 24px rgba(255, 153, 0, 0.20);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(220px, 1.2fr);
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .control-card,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--soft-line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .control-card {
+      padding: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    select,
+    input {
+      width: 100%;
+      appearance: none;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font: inherit;
+      background: #fff;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    select:focus,
+    input:focus {
+      border-color: var(--orange);
+      box-shadow: 0 0 0 4px rgba(255, 153, 0, 0.15);
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .suffix {
+      padding: 11px 13px;
+      background: #111;
+      color: #fff;
+      border-radius: 12px;
+      font-weight: 800;
+    }
+
+    .starting-balance {
+      font-size: 1.6rem;
+      line-height: 1.05;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+
+    .small {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .summary-panel {
+      padding: 18px;
+    }
+
+    .summary-panel h2,
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+
+    .summary-panel.actual h2::before,
+    .summary-panel.algo h2::before,
+    .summary-panel.delta h2::before {
+      content: "";
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      margin-right: 8px;
+      vertical-align: 1px;
+    }
+
+    .summary-panel.actual h2::before { background: var(--blue); }
+    .summary-panel.algo h2::before { background: var(--orange); }
+    .summary-panel.delta h2::before { background: var(--purple); }
+
+    .metric-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: baseline;
+      padding: 10px 0;
+      border-top: 1px solid var(--soft-line);
+    }
+
+    .metric:first-child { border-top: 0; }
+
+    .metric span:first-child {
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .metric strong {
+      font-size: 1.06rem;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .positive { color: var(--green) !important; }
+    .negative { color: var(--red) !important; }
+    .neutral { color: var(--muted) !important; }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: 1.45fr 0.95fr;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .panel {
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    .note-box {
+      background: var(--orange-soft);
+      border: 1px solid rgba(255, 153, 0, 0.35);
+      border-radius: 14px;
+      padding: 14px 16px;
+      line-height: 1.5;
+    }
+
+    .note-box p {
+      margin: 0 0 8px;
+    }
+
+    .note-box p:last-child {
+      margin-bottom: 0;
+    }
+
+    .comments {
+      display: grid;
+      gap: 10px;
+    }
+
+    details {
+      border: 1px solid var(--soft-line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #fff;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: 800;
+      color: #111827;
+    }
+
+    details p {
+      margin: 10px 0 0;
+      color: #374151;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+
+    .chart-panel {
+      margin-bottom: 16px;
+      min-height: 330px;
+    }
+
+    #chart {
+      width: 100%;
+      min-height: 270px;
+      overflow: hidden;
+      border: 1px solid var(--soft-line);
+      border-radius: 16px;
+      background: linear-gradient(180deg, #fff 0%, #fbfcfd 100%);
+    }
+
+    .section-title {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: end;
+      margin: 26px 0 10px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 1.35rem;
+      letter-spacing: -0.03em;
+    }
+
+    .section-title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid var(--soft-line);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 1180px;
+    }
+
+    th, td {
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--soft-line);
+      border-right: 1px solid var(--soft-line);
+      vertical-align: middle;
+      font-size: 0.88rem;
+    }
+
+    th:last-child, td:last-child { border-right: 0; }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f9fafb;
+      color: #111827;
+      font-weight: 900;
+      text-align: center;
+      white-space: normal;
+      line-height: 1.2;
+    }
+
+    tbody tr.current {
+      background: linear-gradient(90deg, rgba(255,153,0,0.07), transparent 48%);
+    }
+
+    tbody tr:hover {
+      background: #fafafa;
+    }
+
+    td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    td.center {
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    td.rule {
+      min-width: 300px;
+      line-height: 1.28;
+    }
+
+    td.negative-fill {
+      background: var(--red-bg);
+      color: var(--red);
+      font-weight: 800;
+    }
+
+    td.positive-fill {
+      background: var(--green-bg);
+      color: var(--green);
+      font-weight: 800;
+    }
+
+    .table-footnote {
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .formula-panel {
+      margin-top: 16px;
+    }
+
+    .formula-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .formula-card {
+      border: 1px solid var(--soft-line);
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .formula-card strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .formula-card code {
+      color: #374151;
+      white-space: normal;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.82rem;
+    }
+
+    footer {
+      margin-top: 26px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      text-align: center;
+    }
+
+    @media (max-width: 1100px) {
+      .controls,
+      .summary-grid,
+      .notes-grid,
+      .formula-grid {
+        grid-template-columns: 1fr;
+      }
+      .page {
+        width: min(100% - 20px, 1480px);
+        padding-top: 12px;
+      }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page { width: 100%; padding: 0; }
+      .title-card, .panel, .control-card, .table-wrap { box-shadow: none; }
+      .table-wrap { overflow: visible; }
+      table { min-width: 0; font-size: 9pt; }
+      th, td { padding: 5px; }
+      .controls { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <section class="title-card">
+        <h1>Trade Comparison Tracker <span style="font-weight:700;">(Actual vs Deviated Version)</span></h1>
+        <p class="subtitle">
+          Browser version of the uploaded <strong>TRADE TRACKER v2.2.xlsx</strong>. It keeps the same two inputs, account-balance mapping,
+          summary calculations, actual-trade table, algorithm-theoretical table, and workbook comments.
+        </p>
+      </section>
+      <div class="warning">⚠️ Only change the account dropdown or Current TWS Move %. Everything else is auto-calculated for viewing.</div>
+    </header>
+
+    <section class="controls" aria-label="Inputs">
+      <div class="control-card">
+        <label for="accountSelect">Account</label>
+        <select id="accountSelect"></select>
+        <p class="small">Matches the spreadsheet dropdown in A3.</p>
+      </div>
+      <div class="control-card">
+        <label for="moveInput">Current TWS Move</label>
+        <div class="input-row">
+          <input id="moveInput" type="number" step="0.01" value="18.00" />
+          <span class="suffix">%</span>
+        </div>
+        <p class="small">This is applied only to Trade #5 in both tables.</p>
+      </div>
+      <div class="control-card">
+        <label>Starting Bal @ 10th Feb 2026</label>
+        <div id="startingBalance" class="starting-balance">$87,880.00</div>
+        <p class="small">Auto-configured from the selected account.</p>
+      </div>
+    </section>
+
+    <section class="summary-grid" aria-label="Summary">
+      <article class="panel summary-panel actual">
+        <h2>Summary of “Actual” Deviated Account Version</h2>
+        <div id="actualSummary" class="metric-list"></div>
+      </article>
+      <article class="panel summary-panel algo">
+        <h2>Summary of Algorithm “Theoretical” Account Version</h2>
+        <div id="algoSummary" class="metric-list"></div>
+      </article>
+      <article class="panel summary-panel delta">
+        <h2>Theoretical vs Actual Difference</h2>
+        <div id="deltaSummary" class="metric-list"></div>
+      </article>
+    </section>
+
+    <section class="notes-grid">
+      <article class="panel">
+        <h2>Workbook notes</h2>
+        <div class="note-box">
+          <p><strong>Note:</strong> If you set TWS Move to 0%, this effectively brings the model back to the account level after the four losses absorbed during Feb/Mar 2026.</p>
+          <p>You will notice the actual drawdown is <strong>-10.61%</strong> and the algo drawdown is <strong>-8.24%</strong> when TWS Move is 0%.</p>
+          <p>This is accurate with what has, and what would have, happened with each scenario.</p>
+          <p><strong>Ensure you read all comments in this document.</strong></p>
+        </div>
+      </article>
+      <article class="panel">
+        <h2>Comments from the workbook</h2>
+        <div class="comments">
+          <details>
+            <summary>D6 — Starting Account note</summary>
+            <p>NOTE: I had to do this from our ACTUAL losses sustained. This is ACCURATE for the CURRENT TRADE. However, this would have been even less losses and more profit for the theoretical algorithm results.
+
+The ONLY slight deviation from this is Chewy, because he didn't go through ALL the losses everyone else did because he started partway through. So his starting account is slightly "skewed" as a result (but Im not going to redo the entire spreadsheet to calculate as i think the bigger picture is what matters).</p>
+          </details>
+          <details>
+            <summary>F17 — Actual current position size</summary>
+            <p>This is the position size AFTER BUY2 (40%). Originally we had 20% of our entire account in this trade.</p>
+          </details>
+          <details>
+            <summary>F27 — Algorithm current position size</summary>
+            <p>This is the position size AFTER BUY2 (85%). We would have been in around 42.5% for our initial buy (ie this is over DOUBLE the position size we currently in the trade).</p>
+          </details>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel chart-panel">
+      <h2>Account Total by Trade</h2>
+      <div id="chart" role="img" aria-label="Line chart comparing actual and theoretical account totals"></div>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>Actual Trade (Current)</h2>
+        <p>Current deviated account version.</p>
+      </div>
+      <div class="table-wrap">
+        <table id="actualTable" aria-label="Actual trade table"></table>
+      </div>
+      <p class="table-footnote">Trade #5 uses the Current TWS Move input. Its position size is 40% after Buy 2.</p>
+    </section>
+
+    <section>
+      <div class="section-title">
+        <h2>Algorithm Trade Tracker (Theoretical Because We Didn’t Follow It)</h2>
+        <p>Auto-configured from the same starting account.</p>
+      </div>
+      <div class="table-wrap">
+        <table id="algoTable" aria-label="Algorithm trade table"></table>
+      </div>
+      <p class="table-footnote">Trade #5 uses the Current TWS Move input. Its position size is 85% after Buy 2.</p>
+    </section>
+
+    <section class="panel formula-panel">
+      <h2>Calculation chain</h2>
+      <div class="formula-grid">
+        <div class="formula-card">
+          <strong>Position Size ($)</strong>
+          <code>Starting Account × Position Size %</code>
+        </div>
+        <div class="formula-card">
+          <strong>Account % Impact</strong>
+          <code>Position Size % × % Move</code>
+        </div>
+        <div class="formula-card">
+          <strong>Trade P/L ($)</strong>
+          <code>Position Size ($) × % Move</code>
+        </div>
+        <div class="formula-card">
+          <strong>Rolling Account % Move</strong>
+          <code>Account Total ÷ Initial Starting Account − 1</code>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      Single-file HTML / JavaScript implementation. No external libraries are required.
+    </footer>
+  </main>
+
+  <script>
+    "use strict";
+
+    const ACCOUNTS = {
+      Jaxon: 87880,
+      Maciek: 34665,
+      Eugene: 21139,
+      Renae: 7800,
+      Chewy: 3231
+    };
+
+    const TRADE_TEMPLATE = [
+      {
+        trade: 1,
+        startDate: "2/10/2026",
+        endDate: "2/12/2026",
+        actualRule: "Full account",
+        actualPct: 1,
+        algoRule: "Full account",
+        algoPct: 1,
+        move: -0.0351
+      },
+      {
+        trade: 2,
+        startDate: "2/12/2026",
+        endDate: "2/17/2026",
+        actualRule: "Full account",
+        actualPct: 1,
+        algoRule: "Full account",
+        algoPct: 0.5,
+        move: -0.035
+      },
+      {
+        trade: 3,
+        startDate: "2/23/2026",
+        endDate: "3/3/2026",
+        actualRule: "Full account x 0.85",
+        actualPct: 0.85,
+        algoRule: "Full account x 0.85",
+        algoPct: 0.5,
+        move: -0.035
+      },
+      {
+        trade: 4,
+        startDate: "3/10/2026",
+        endDate: "3/12/2026",
+        actualRule: "Full account / 2 x 0.6",
+        actualPct: 0.3,
+        algoRule: "Full account / 2 x 0.6",
+        algoPct: 0.425,
+        move: -0.035
+      },
+      {
+        trade: 5,
+        startDate: "4/14/2026",
+        endDate: "5/7/2026",
+        actualRule: "Multi-buy: initial full account / 2 x 0.4; then add same $ value @ 33.87%",
+        actualPct: 0.4,
+        algoRule: "Multi-buy: initial full account / 2 x 0.85; then add same $ value @ 33.87%",
+        algoPct: 0.85,
+        move: null
+      }
+    ];
+
+    const columns = [
+      { key: "trade", label: "Trade #", type: "int", align: "center" },
+      { key: "startDate", label: "Start Date", type: "text", align: "center" },
+      { key: "endDate", label: "End Date", type: "text", align: "center" },
+      { key: "rule", label: "Position Size Rule", type: "text", align: "left", className: "rule" },
+      { key: "startingAccount", label: "Starting Account ($)", type: "currency" },
+      { key: "positionPct", label: "Position Size % of Account", type: "percent" },
+      { key: "positionSize", label: "Position Size ($)", type: "currency" },
+      { key: "move", label: "% Move", type: "percent" },
+      { key: "accountImpact", label: "Account % Impact", type: "percent" },
+      { key: "tradePL", label: "Trade P/L ($)", type: "currency" },
+      { key: "accountTotal", label: "Account Total ($)", type: "currency" },
+      { key: "cumulativePL", label: "Acc $ P&L Since 2/10/2026", type: "currency" },
+      { key: "rollingMove", label: "Rolling Account % Move", type: "percent" }
+    ];
+
+    const els = {
+      accountSelect: document.getElementById("accountSelect"),
+      moveInput: document.getElementById("moveInput"),
+      startingBalance: document.getElementById("startingBalance"),
+      actualSummary: document.getElementById("actualSummary"),
+      algoSummary: document.getElementById("algoSummary"),
+      deltaSummary: document.getElementById("deltaSummary"),
+      actualTable: document.getElementById("actualTable"),
+      algoTable: document.getElementById("algoTable"),
+      chart: document.getElementById("chart")
+    };
+
+    function formatCurrency(value, options = {}) {
+      const { parens = false } = options;
+      const abs = Math.abs(value);
+      if (abs < 0.005) return "-";
+      const formatted = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(abs);
+      if (value < 0) return parens ? `(${formatted})` : `-${formatted}`;
+      return formatted;
+    }
+
+    function formatPercent(value, options = {}) {
+      const { plus = false, parens = false } = options;
+      const abs = Math.abs(value);
+      if (abs < 0.0000005) return "-";
+      const pct = new Intl.NumberFormat("en-US", {
+        style: "percent",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(abs);
+      if (value < 0) return parens ? `(${pct})` : `-${pct}`;
+      return plus ? `+${pct}` : pct;
+    }
+
+    function numberClass(value) {
+      if (value > 0.00000001) return "positive";
+      if (value < -0.00000001) return "negative";
+      return "neutral";
+    }
+
+    function displayValue(value, type, summary = false) {
+      if (type === "currency") return formatCurrency(value, { parens: summary });
+      if (type === "percent") return formatPercent(value, { plus: summary, parens: summary });
+      if (type === "int") return String(value);
+      return value;
+    }
+
+    function buildRows(mode, startingBalance, currentTwsMove) {
+      let account = startingBalance;
+
+      return TRADE_TEMPLATE.map((trade) => {
+        const positionPct = mode === "actual" ? trade.actualPct : trade.algoPct;
+        const rule = mode === "actual" ? trade.actualRule : trade.algoRule;
+        const move = trade.trade === 5 ? currentTwsMove : trade.move;
+        const positionSize = account * positionPct;
+        const accountImpact = positionPct * move;
+        const tradePL = positionSize * move;
+        const accountTotal = account + tradePL;
+        const cumulativePL = accountTotal - startingBalance;
+        const rollingMove = accountTotal / startingBalance - 1;
+
+        const row = {
+          trade: trade.trade,
+          startDate: trade.startDate,
+          endDate: trade.endDate,
+          rule,
+          startingAccount: account,
+          positionPct,
+          positionSize,
+          move,
+          accountImpact,
+          tradePL,
+          accountTotal,
+          cumulativePL,
+          rollingMove
+        };
+
+        account = accountTotal;
+        return row;
+      });
+    }
+
+    function summary(rows, startingBalance) {
+      const ending = rows[rows.length - 1].accountTotal;
+      return {
+        start: startingBalance,
+        ending,
+        totalPL: ending - startingBalance,
+        totalMove: ending / startingBalance - 1
+      };
+    }
+
+    function renderSummary(container, rows, startingBalance) {
+      const values = summary(rows, startingBalance);
+      const metrics = [
+        ["Starting Account (after losses)", formatCurrency(values.start), ""],
+        ["Ending Account", formatCurrency(values.ending), ""],
+        ["Total P/L", formatCurrency(values.totalPL, { parens: true }), numberClass(values.totalPL)],
+        ["Total Account % Move", formatPercent(values.totalMove, { plus: true, parens: true }), numberClass(values.totalMove)]
+      ];
+
+      container.replaceChildren(...metrics.map(([label, value, cls]) => {
+        const metric = document.createElement("div");
+        metric.className = "metric";
+        const labelEl = document.createElement("span");
+        labelEl.textContent = label;
+        const valueEl = document.createElement("strong");
+        valueEl.textContent = value;
+        if (cls) valueEl.classList.add(cls);
+        metric.append(labelEl, valueEl);
+        return metric;
+      }));
+    }
+
+    function renderDelta(container, actualRows, algoRows) {
+      const a = actualRows[actualRows.length - 1];
+      const b = algoRows[algoRows.length - 1];
+      const metrics = [
+        ["Ending Account Difference", formatCurrency(b.accountTotal - a.accountTotal), numberClass(b.accountTotal - a.accountTotal)],
+        ["Total P/L Difference", formatCurrency(b.cumulativePL - a.cumulativePL), numberClass(b.cumulativePL - a.cumulativePL)],
+        ["Rolling Move Difference", formatPercent(b.rollingMove - a.rollingMove, { plus: true, parens: true }), numberClass(b.rollingMove - a.rollingMove)],
+        ["Current Position Size Difference", formatCurrency(b.positionSize - a.positionSize), numberClass(b.positionSize - a.positionSize)]
+      ];
+
+      container.replaceChildren(...metrics.map(([label, value, cls]) => {
+        const metric = document.createElement("div");
+        metric.className = "metric";
+        const labelEl = document.createElement("span");
+        labelEl.textContent = label;
+        const valueEl = document.createElement("strong");
+        valueEl.textContent = value;
+        if (cls) valueEl.classList.add(cls);
+        metric.append(labelEl, valueEl);
+        return metric;
+      }));
+    }
+
+    function renderTable(table, rows) {
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+
+      columns.forEach((col) => {
+        const th = document.createElement("th");
+        th.textContent = col.label;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+
+      const tbody = document.createElement("tbody");
+
+      rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        if (row.trade === 5) tr.classList.add("current");
+
+        columns.forEach((col) => {
+          const td = document.createElement("td");
+          const raw = row[col.key];
+          td.textContent = displayValue(raw, col.type);
+          if (col.align === "center") td.classList.add("center");
+          if (col.className) td.classList.add(col.className);
+          if (["currency", "percent"].includes(col.type)) {
+            td.classList.add("num");
+            if (raw < -0.00000001) {
+              td.classList.add(["move", "accountImpact", "tradePL", "rollingMove"].includes(col.key) ? "negative-fill" : "negative");
+            } else if (raw > 0.00000001 && ["move", "accountImpact", "tradePL", "rollingMove"].includes(col.key)) {
+              td.classList.add("positive-fill");
+            }
+          }
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      });
+
+      table.replaceChildren(thead, tbody);
+    }
+
+    function renderChart(startingBalance, actualRows, algoRows) {
+      const width = 920;
+      const height = 300;
+      const pad = { top: 20, right: 32, bottom: 44, left: 88 };
+      const actual = [{ label: "Start", value: startingBalance }, ...actualRows.map((r) => ({ label: `T${r.trade}`, value: r.accountTotal }))];
+      const algo = [{ label: "Start", value: startingBalance }, ...algoRows.map((r) => ({ label: `T${r.trade}`, value: r.accountTotal }))];
+      const allValues = [...actual, ...algo].map((d) => d.value);
+      const rawMin = Math.min(...allValues);
+      const rawMax = Math.max(...allValues);
+      const span = Math.max(1, rawMax - rawMin);
+      const min = rawMin - span * 0.12;
+      const max = rawMax + span * 0.12;
+      const xStep = (width - pad.left - pad.right) / (actual.length - 1);
+
+      const x = (idx) => pad.left + idx * xStep;
+      const y = (value) => pad.top + (max - value) / (max - min) * (height - pad.top - pad.bottom);
+
+      function pathFor(series) {
+        return series.map((d, i) => `${i === 0 ? "M" : "L"} ${x(i).toFixed(2)} ${y(d.value).toFixed(2)}`).join(" ");
+      }
+
+      const gridLines = [];
+      for (let i = 0; i <= 4; i++) {
+        const val = min + (max - min) * (i / 4);
+        const yy = y(val);
+        gridLines.push(`
+          <line x1="${pad.left}" y1="${yy}" x2="${width - pad.right}" y2="${yy}" stroke="#e7ebf0" />
+          <text x="${pad.left - 12}" y="${yy + 4}" text-anchor="end" font-size="12" fill="#6b7280">${formatCurrency(val)}</text>
+        `);
+      }
+
+      const labels = actual.map((d, i) => `
+        <text x="${x(i)}" y="${height - 16}" text-anchor="middle" font-size="12" fill="#6b7280">${d.label}</text>
+      `).join("");
+
+      const dots = (series, color) => series.map((d, i) => `
+        <circle cx="${x(i)}" cy="${y(d.value)}" r="4.5" fill="${color}">
+          <title>${d.label}: ${formatCurrency(d.value)}</title>
+        </circle>
+      `).join("");
+
+      els.chart.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" width="100%" height="300" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="${width}" height="${height}" fill="transparent"/>
+          ${gridLines.join("")}
+          <line x1="${pad.left}" y1="${height - pad.bottom}" x2="${width - pad.right}" y2="${height - pad.bottom}" stroke="#cfd6df" />
+          <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${height - pad.bottom}" stroke="#cfd6df" />
+          ${labels}
+          <path d="${pathFor(actual)}" fill="none" stroke="var(--blue)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="${pathFor(algo)}" fill="none" stroke="var(--orange)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          ${dots(actual, "var(--blue)")}
+          ${dots(algo, "var(--orange)")}
+          <g transform="translate(${pad.left}, 16)">
+            <circle cx="0" cy="0" r="5" fill="var(--blue)" />
+            <text x="12" y="4" font-size="13" fill="#111827" font-weight="700">Actual</text>
+            <circle cx="90" cy="0" r="5" fill="var(--orange)" />
+            <text x="102" y="4" font-size="13" fill="#111827" font-weight="700">Algorithm theoretical</text>
+          </g>
+        </svg>
+      `;
+    }
+
+    function getCurrentState() {
+      const accountName = els.accountSelect.value;
+      const startingBalance = ACCOUNTS[accountName];
+      const twsPercent = Number.parseFloat(els.moveInput.value);
+      const currentTwsMove = Number.isFinite(twsPercent) ? twsPercent / 100 : 0;
+      return { accountName, startingBalance, currentTwsMove };
+    }
+
+    function render() {
+      const { startingBalance, currentTwsMove } = getCurrentState();
+      const actualRows = buildRows("actual", startingBalance, currentTwsMove);
+      const algoRows = buildRows("algo", startingBalance, currentTwsMove);
+
+      els.startingBalance.textContent = formatCurrency(startingBalance);
+      renderSummary(els.actualSummary, actualRows, startingBalance);
+      renderSummary(els.algoSummary, algoRows, startingBalance);
+      renderDelta(els.deltaSummary, actualRows, algoRows);
+      renderChart(startingBalance, actualRows, algoRows);
+      renderTable(els.actualTable, actualRows);
+      renderTable(els.algoTable, algoRows);
+    }
+
+    Object.entries(ACCOUNTS).forEach(([name]) => {
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = name;
+      els.accountSelect.appendChild(option);
+    });
+    els.accountSelect.value = "Jaxon";
+
+    els.accountSelect.addEventListener("change", render);
+    els.moveInput.addEventListener("input", render);
+
+    render();
+  </script>
+</body>
+</html>
